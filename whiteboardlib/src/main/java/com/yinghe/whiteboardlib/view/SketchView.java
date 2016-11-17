@@ -111,6 +111,7 @@ public class SketchView extends View implements OnTouchListener {
     private Paint strokePaint;
     private float downX, downY, preX, preY, curX, curY;
     private int mWidth, mHeight;
+    private List<String> storagePaths = new ArrayList<>();
 
     SketchData curSketchData;
     //    private List<PhotoRecord> curSketchData.photoRecordList;
@@ -187,6 +188,7 @@ public class SketchView extends View implements OnTouchListener {
                 }
             });
         }
+        storagePaths = getAllMount();
         invalidate();
     }
 
@@ -754,12 +756,56 @@ public class SketchView extends View implements OnTouchListener {
 
     public Bitmap getSampleBitMap(String path) {
         Bitmap sampleBM = null;
-        if (path.contains(Environment.getExternalStorageDirectory().toString())) {
+        //if (path.contains(Environment.getExternalStorageDirectory().toString())) {
+        if (isContainsPath(path)) {
             sampleBM = getSDCardPhoto(path);
         } else {
             sampleBM = getAssetsPhoto(path);
         }
         return sampleBM;
+    }
+    
+    /**
+     * 跟所有设备地址进行比较
+     * @param path
+     * @return
+     */
+    private boolean isContainsPath(String path) {
+        for (String mPath : storagePaths) {
+            if (path.contains(mPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取所有存储设备地址
+     * @return
+     */
+    private List<String> getAllMount(){
+        List<String> strMeadiaPath = new ArrayList<>();
+        int countC = 0;
+        StorageManager sm = (StorageManager) mContext.getSystemService(Context.STORAGE_SERVICE);
+        try
+        {
+            String[] paths = (String[]) sm.getClass().getMethod("getVolumePaths").invoke(sm);
+            for(int i = 0; i < paths.length; i++)
+            {
+                String status = (String) sm.getClass().getMethod("getVolumeState", String.class).invoke(sm, paths[i]);
+                if(status.equals(android.os.Environment.MEDIA_MOUNTED))
+                {
+                    Log.i(TAG,"path:"+paths[i]);
+                    strMeadiaPath.add(countC, paths[i]);
+                    countC++;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return strMeadiaPath;
     }
 
     @NonNull
